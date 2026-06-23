@@ -7,10 +7,12 @@ import Image from 'next/image';
 import {
   LayoutDashboard, ShoppingBag, MessageCircle, Truck, Users,
   Building2, BarChart2, Settings, ChevronRight, LogOut,
-  Bot, Factory, CreditCard, ClipboardCheck, Smartphone, type LucideIcon
+  Bot, Factory, CreditCard, ClipboardCheck, Smartphone,
+  Cpu, AlertOctagon, ScrollText, Megaphone, CalendarDays, type LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AppProvider } from '@/lib/app-context';
+import { AgentProvider } from '@/lib/agent-context';
 
 const NAV_SECTIONS = [
   {
@@ -23,10 +25,21 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Intelligence',
+    label: 'Agents',
     items: [
-      { href: '/admin/agent', label: 'WhatsApp Intelligence', icon: MessageCircle },
+      { href: '/admin/agent-hub', label: 'Agent Hub', icon: Cpu },
+      { href: '/admin/conversations', label: 'Conversations', icon: MessageCircle, badge: '4' },
+      { href: '/admin/escalations', label: 'Escalations', icon: AlertOctagon, badge: '2' },
+      { href: '/admin/agent-logs', label: 'Agent Logs', icon: ScrollText },
+      { href: '/admin/agent', label: 'WhatsApp Intelligence', icon: Bot },
       { href: '/admin/ai-command', label: 'AI Command Center', icon: Bot },
+    ],
+  },
+  {
+    label: 'Marketing',
+    items: [
+      { href: '/admin/marketing', label: 'Marketing Hub', icon: Megaphone },
+      { href: '/admin/marketing/calendar', label: 'Content Calendar', icon: CalendarDays },
     ],
   },
   {
@@ -52,6 +65,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <AppProvider>
+    <AgentProvider>
       <div className="flex min-h-screen bg-gray-50">
         <aside className="w-60 bg-gray-900 flex-shrink-0 flex flex-col fixed left-0 top-0 bottom-0 z-40 hidden md:flex">
           <div className="px-5 py-5 border-b border-gray-800">
@@ -121,6 +135,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           <div className="pt-14 md:pt-0">{children}</div>
         </main>
       </div>
+    </AgentProvider>
     </AppProvider>
   );
 }
