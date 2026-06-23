@@ -357,7 +357,7 @@ export default function AICommandPage() {
             </button>
           </div>
           <p className="text-[10px] text-gray-400 mt-2 px-1 flex items-center gap-1">
-            <ChevronRight size={10} /> Try: "assign Ahmed to LK-AE-1027" · "show pending pickups" · "revenue today"
+            <ChevronRight size={10} /> Try: &ldquo;assign Ahmed to LK-AE-1027&rdquo; · &ldquo;show pending pickups&rdquo; · &ldquo;revenue today&rdquo;
           </p>
         </div>
       </div>

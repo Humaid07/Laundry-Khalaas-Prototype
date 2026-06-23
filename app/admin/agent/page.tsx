@@ -358,7 +358,7 @@ export default function AdminAgentPage() {
                     <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${(p.count / 89) * 100}%`, background: 'linear-gradient(90deg, #c2185b, #e91e8c)' }} />
                     </div>
-                    <span className="text-xs text-gray-700 font-medium w-28 truncate">"{p.phrase}"</span>
+                    <span className="text-xs text-gray-700 font-medium w-28 truncate">&ldquo;{p.phrase}&rdquo;</span>
                     <span className="text-xs font-bold text-gray-500 w-8 text-right flex-shrink-0">{p.count}</span>
                   </div>
                 ))}
