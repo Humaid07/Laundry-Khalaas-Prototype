@@ -36,3 +36,19 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# backend Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+backend/.env
+backend/**/__pycache__/
+backend/**/*.pyc
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# local env (never commit real credentials)
+.env
