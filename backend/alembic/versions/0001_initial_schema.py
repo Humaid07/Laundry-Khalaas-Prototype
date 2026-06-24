@@ -223,7 +223,7 @@ def upgrade() -> None:
     # Row Level Security
     # ------------------------------------------------------------------ #
     for table in ("orders", "messages", "customer_addresses"):
-        op.execute(text(f"ALTER TABLE {table} ENABLE ROW SECURITY"))
+        op.execute(text(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY"))
         op.execute(text(f"""
             CREATE POLICY service_access ON {table}
             USING (true)
@@ -234,7 +234,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     for table in ("orders", "messages", "customer_addresses"):
         op.execute(text(f"DROP POLICY IF EXISTS service_access ON {table}"))
-        op.execute(text(f"ALTER TABLE {table} DISABLE ROW SECURITY"))
+        op.execute(text(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY"))
 
     op.execute(text("DROP TRIGGER IF EXISTS order_status_transition_check ON orders"))
     op.execute(text("DROP FUNCTION IF EXISTS enforce_order_status_transition()"))
