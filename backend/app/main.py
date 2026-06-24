@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from app.api.health import router as health_router
 from app.api.verification import router as verification_router
@@ -23,3 +24,8 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(verification_router)
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
