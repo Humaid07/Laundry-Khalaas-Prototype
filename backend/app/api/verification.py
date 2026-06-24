@@ -168,7 +168,9 @@ async def run_classifier_demo(db: AsyncSession = Depends(get_db)):
         body=raw_body,
     )
     db.add(message)
-    await db.flush()
+    # Commit all sample data so LLMService's separate session can see the FKs
+    await db.commit()
+    await db.refresh(message)
 
     # Privacy filter
     safe_body = apply_privacy_filter(raw_body)
