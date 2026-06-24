@@ -1,7 +1,12 @@
 import os
+import sys
+from pathlib import Path
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
+
+# Ensure the app package is importable when running inside Docker
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 config = context.config
 
