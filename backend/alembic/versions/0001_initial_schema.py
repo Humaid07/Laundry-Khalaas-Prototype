@@ -8,6 +8,7 @@ Create Date: 2026-06-25 00:00:00.000000
 from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
 
 revision: str = "0001"
@@ -18,10 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # pgvector extension
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+    op.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 
     # order_status enum
-    op.execute("""
+    op.execute(text("""
         DO $$ BEGIN
             CREATE TYPE order_status AS ENUM (
                 'created', 'confirmed', 'pickup_assigned', 'picked_up',
@@ -30,7 +31,7 @@ def upgrade() -> None:
             );
         EXCEPTION WHEN duplicate_object THEN null;
         END $$;
-    """)
+    """))
 
     # markets
     op.create_table(
@@ -183,7 +184,7 @@ def upgrade() -> None:
     # ------------------------------------------------------------------ #
     # DB-level order state machine trigger
     # ------------------------------------------------------------------ #
-    op.execute("""
+    op.execute(text("""
         CREATE OR REPLACE FUNCTION enforce_order_status_transition()
         RETURNS TRIGGER AS $$
         BEGIN
@@ -208,35 +209,35 @@ def upgrade() -> None:
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
-    """)
+    """))
 
-    op.execute("""
+    op.execute(text("""
         CREATE TRIGGER order_status_transition_check
         BEFORE UPDATE ON orders
         FOR EACH ROW
         WHEN (OLD.status IS DISTINCT FROM NEW.status)
         EXECUTE FUNCTION enforce_order_status_transition();
-    """)
+    """))
 
     # ------------------------------------------------------------------ #
     # Row Level Security
     # ------------------------------------------------------------------ #
     for table in ("orders", "messages", "customer_addresses"):
-        op.execute(f"ALTER TABLE {table} ENABLE ROW SECURITY")
-        op.execute(f"""
+        op.execute(text(f"ALTER TABLE {table} ENABLE ROW SECURITY"))
+        op.execute(text(f"""
             CREATE POLICY service_access ON {table}
             USING (true)
             WITH CHECK (true)
-        """)
+        """))
 
 
 def downgrade() -> None:
     for table in ("orders", "messages", "customer_addresses"):
-        op.execute(f"DROP POLICY IF EXISTS service_access ON {table}")
-        op.execute(f"ALTER TABLE {table} DISABLE ROW SECURITY")
+        op.execute(text(f"DROP POLICY IF EXISTS service_access ON {table}"))
+        op.execute(text(f"ALTER TABLE {table} DISABLE ROW SECURITY"))
 
-    op.execute("DROP TRIGGER IF EXISTS order_status_transition_check ON orders")
-    op.execute("DROP FUNCTION IF EXISTS enforce_order_status_transition()")
+    op.execute(text("DROP TRIGGER IF EXISTS order_status_transition_check ON orders"))
+    op.execute(text("DROP FUNCTION IF EXISTS enforce_order_status_transition()"))
 
     for t in reversed([
         "cost_tracking", "ai_action_logs", "messages", "conversations",
@@ -245,4 +246,4 @@ def downgrade() -> None:
     ]):
         op.drop_table(t)
 
-    op.execute("DROP TYPE IF EXISTS order_status")
+    op.execute(text("DROP TYPE IF EXISTS order_status"))
