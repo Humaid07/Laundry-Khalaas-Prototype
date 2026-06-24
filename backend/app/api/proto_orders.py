@@ -178,7 +178,7 @@ SEED_DRIVERS = [
 async def _seed(db: AsyncSession) -> None:
     for order in SEED_ORDERS:
         await db.execute(
-            text("INSERT INTO prototype_orders (id, data) VALUES (:id, :data::jsonb) ON CONFLICT DO NOTHING"),
+            text("INSERT INTO prototype_orders (id, data) VALUES (:id, CAST(:data AS jsonb)) ON CONFLICT DO NOTHING"),
             {"id": order["id"], "data": json.dumps(order)},
         )
     await db.commit()
@@ -189,7 +189,7 @@ async def _seed(db: AsyncSession) -> None:
 @router.get("/orders")
 async def list_orders(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        text("SELECT data::text FROM prototype_orders ORDER BY created_at DESC")
+        text("SELECT CAST(data AS text) FROM prototype_orders ORDER BY created_at DESC")
     )
     rows = result.fetchall()
     if not rows:
@@ -201,7 +201,7 @@ async def list_orders(db: AsyncSession = Depends(get_db)):
 @router.get("/orders/{order_id}")
 async def get_order(order_id: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        text("SELECT data::text FROM prototype_orders WHERE id = :id"),
+        text("SELECT CAST(data AS text) FROM prototype_orders WHERE id = :id"),
         {"id": order_id},
     )
     row = result.fetchone()
@@ -214,7 +214,7 @@ async def get_order(order_id: str, db: AsyncSession = Depends(get_db)):
 @router.post("/orders", status_code=201)
 async def create_order(order: Dict[str, Any], db: AsyncSession = Depends(get_db)):
     await db.execute(
-        text("INSERT INTO prototype_orders (id, data) VALUES (:id, :data::jsonb) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()"),
+        text("INSERT INTO prototype_orders (id, data) VALUES (:id, CAST(:data AS jsonb)) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()"),
         {"id": order["id"], "data": json.dumps(order)},
     )
     await db.commit()
@@ -228,7 +228,7 @@ class StatusUpdate(BaseModel):
 @router.patch("/orders/{order_id}/status")
 async def update_status(order_id: str, body: StatusUpdate, db: AsyncSession = Depends(get_db)):
     await db.execute(
-        text("UPDATE prototype_orders SET data = data || :patch::jsonb, updated_at = NOW() WHERE id = :id"),
+        text("UPDATE prototype_orders SET data = data || CAST(:patch AS jsonb), updated_at = NOW() WHERE id = :id"),
         {"id": order_id, "patch": json.dumps({"status": body.status})},
     )
     await db.commit()
@@ -243,7 +243,7 @@ class DriverUpdate(BaseModel):
 @router.patch("/orders/{order_id}/driver")
 async def assign_driver(order_id: str, body: DriverUpdate, db: AsyncSession = Depends(get_db)):
     await db.execute(
-        text("UPDATE prototype_orders SET data = data || :patch::jsonb, updated_at = NOW() WHERE id = :id"),
+        text("UPDATE prototype_orders SET data = data || CAST(:patch AS jsonb), updated_at = NOW() WHERE id = :id"),
         {"id": order_id, "patch": json.dumps({"driverId": body.driverId, "driverName": body.driverName, "status": "driver_assigned"})},
     )
     await db.commit()
