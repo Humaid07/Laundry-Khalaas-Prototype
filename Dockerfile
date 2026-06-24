@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/ .
 
 RUN dos2unix scripts/start.sh && \
-    pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir ".[test]"
+    pip install --upgrade pip "setuptools>=68" wheel && \
+    pip install --no-cache-dir -e ".[test]"
 
 ENV PYTHONPATH=/app
 
