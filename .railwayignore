@@ -1,0 +1,19 @@
+# Exclude frontend — Railway deploys only the backend
+package.json
+package-lock.json
+node_modules/
+app/
+components/
+hooks/
+lib/
+public/
+.next/
+.bolt/
+*.tsbuildinfo
+next-env.d.ts
+components.json
+tsconfig.json
+tailwind.config.ts
+postcss.config.mjs
+next.config.mjs
+deploy-railway.ps1
