@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Order, ORDERS, DRIVERS, Driver } from './mock-data';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 interface AppState {
   orders: Order[];
@@ -23,10 +25,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeOrderId, setActiveOrderId] = useState<string | null>('LK-AE-1024');
   const [newOrderCreated, setNewOrderCreated] = useState(false);
 
+  useEffect(() => {
+    if (!API) return;
+    fetch(`${API}/api/orders`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setOrders(data); })
+      .catch(() => {});
+  }, []);
+
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
     setOrders(prev =>
       prev.map(o => o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o)
     );
+    if (API) {
+      fetch(`${API}/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      }).catch(() => {});
+    }
   };
 
   const assignDriver = (orderId: string, driverId: string) => {
@@ -39,12 +56,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : o
       )
     );
+    if (API) {
+      fetch(`${API}/api/orders/${orderId}/driver`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverId, driverName: driver.name }),
+      }).catch(() => {});
+    }
   };
 
   const addOrder = (order: Order) => {
     setOrders(prev => [order, ...prev]);
     setActiveOrderId(order.id);
     setNewOrderCreated(true);
+    if (API) {
+      fetch(`${API}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+      }).catch(() => {});
+    }
   };
 
   return (
