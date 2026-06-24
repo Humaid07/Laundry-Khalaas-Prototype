@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Order, ORDERS, DRIVERS, Driver } from './mock-data';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? '';
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://laundrykhalaas-api-production.up.railway.app';
 
 interface AppState {
   orders: Order[];
