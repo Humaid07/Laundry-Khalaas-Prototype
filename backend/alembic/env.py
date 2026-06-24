@@ -6,9 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 # Ensure the app package is importable when running inside Docker
-_root = str(Path(__file__).resolve().parent.parent)
-sys.path.insert(0, _root)
-print(f"[alembic] root={_root}, app exists={Path(_root, 'app').exists()}, init exists={Path(_root, 'app', '__init__.py').exists()}")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 config = context.config
 

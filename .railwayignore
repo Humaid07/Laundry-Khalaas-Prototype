@@ -2,8 +2,8 @@
 package.json
 package-lock.json
 node_modules/
-app/
-components/
+/app/
+/components/
 hooks/
 lib/
 public/
