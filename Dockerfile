@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev gcc curl && rm -rf /var/lib/apt/lists/*
 
 COPY backend/pyproject.toml .
-RUN pip install --no-cache-dir -e ".[test]"
+RUN pip install --upgrade pip setuptools wheel && pip install --no-cache-dir ".[test]"
 
 COPY backend/ .
 
