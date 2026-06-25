@@ -7,19 +7,19 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { DRIVERS } from '@/lib/mock-data';
 
 const TIMELINE_STEPS = [
-  { key: 'pending', label: 'Order Booked', icon: Package, desc: 'Your order has been received' },
-  { key: 'driver_assigned', label: 'Driver Assigned', icon: Truck, desc: 'Ahmed Khan is assigned to your order' },
-  { key: 'pickup_in_progress', label: 'Driver On the Way', icon: MapPin, desc: 'Driver is heading to your location' },
-  { key: 'collected', label: 'Laundry Collected', icon: CheckCircle, desc: 'Your items have been picked up' },
+  { key: 'created', label: 'Order Booked', icon: Package, desc: 'Your order has been received' },
+  { key: 'confirmed', label: 'Order Confirmed', icon: CheckCircle, desc: 'Your order has been confirmed' },
+  { key: 'pickup_assigned', label: 'Driver Assigned', icon: Truck, desc: 'A driver is assigned to your order' },
+  { key: 'picked_up', label: 'Laundry Collected', icon: MapPin, desc: 'Your items have been picked up' },
   { key: 'cleaning', label: 'Cleaning in Progress', icon: Sparkles, desc: 'Items are being professionally cleaned' },
-  { key: 'quality_check', label: 'Quality Check', icon: ShieldCheck, desc: 'Final inspection before delivery' },
+  { key: 'ready_for_delivery', label: 'Ready for Delivery', icon: ShieldCheck, desc: 'Your order is packed and ready' },
   { key: 'out_for_delivery', label: 'Out for Delivery', icon: Truck, desc: 'Driver is on the way to deliver' },
   { key: 'delivered', label: 'Delivered', icon: CheckCircle, desc: 'Your fresh laundry has been delivered!' },
 ];
 
 const STATUS_ORDER: Record<string, number> = {
-  pending: 0, driver_assigned: 1, pickup_in_progress: 2, collected: 3,
-  cleaning: 4, quality_check: 5, out_for_delivery: 6, delivered: 7,
+  created: 0, confirmed: 1, pickup_assigned: 2, picked_up: 3,
+  cleaning: 4, ready_for_delivery: 5, out_for_delivery: 6, delivered: 7,
 };
 
 export default function OrderTrackingPage() {

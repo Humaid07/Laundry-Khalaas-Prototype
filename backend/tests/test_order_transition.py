@@ -35,6 +35,32 @@ async def test_invalid_transition_rejected_by_db(db_session, sample_order):
 
 
 @pytest.mark.asyncio
+async def test_cleaning_transitions(http_client):
+    # Seed order LK-AE-1025 starts at cleaning.
+    # Invalid jump: cleaning -> delivered must return 422.
+    r_invalid = await http_client.patch(
+        "/api/orders/LK-AE-1025/status",
+        json={"status": "delivered"},
+    )
+    assert r_invalid.status_code == 422
+    assert "invalid_order_status_transition" in r_invalid.json()["detail"]
+
+    # Valid step: cleaning -> ready_for_delivery must return 200.
+    r_valid = await http_client.patch(
+        "/api/orders/LK-AE-1025/status",
+        json={"status": "ready_for_delivery"},
+    )
+    assert r_valid.status_code == 200, f"Expected 200, got {r_valid.status_code}: {r_valid.text}"
+    assert r_valid.json() == {"ok": True}
+
+
+def test_valid_transitions_dict_cleaning():
+    from app.api.proto_orders import VALID_TRANSITIONS
+    assert "ready_for_delivery" in VALID_TRANSITIONS["cleaning"]
+    assert "delivered" not in VALID_TRANSITIONS["cleaning"]
+
+
+@pytest.mark.asyncio
 async def test_invalid_transition_demo_endpoint_clean_response(http_client):
     response = await http_client.post("/verification/invalid-transition-demo")
     assert response.status_code == 200

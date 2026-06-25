@@ -11,13 +11,22 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { DRIVERS, Order, OrderStatus } from '@/lib/mock-data';
 
 const ALL_STATUSES: OrderStatus[] = [
-  'pending', 'driver_assigned', 'pickup_in_progress', 'collected',
-  'cleaning', 'quality_check', 'out_for_delivery', 'delivered', 'escalated'
+  'created', 'confirmed', 'pickup_assigned', 'picked_up',
+  'cleaning', 'ready_for_delivery', 'out_for_delivery', 'delivered', 'cancelled',
 ];
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: 'Pending', driver_assigned: 'Driver Assigned', pickup_in_progress: 'Pickup In Progress',
-  collected: 'Collected', cleaning: 'Cleaning in Progress', quality_check: 'Quality Check',
-  out_for_delivery: 'Out for Delivery', delivered: 'Delivered', escalated: 'Escalated',
+  created: 'Order Created', confirmed: 'Confirmed', pickup_assigned: 'Pickup Assigned',
+  picked_up: 'Picked Up', cleaning: 'Cleaning in Progress', ready_for_delivery: 'Ready for Delivery',
+  out_for_delivery: 'Out for Delivery', delivered: 'Delivered', cancelled: 'Cancelled',
+};
+const NEXT_STATUS: Partial<Record<OrderStatus, { status: OrderStatus; label: string }>> = {
+  created:            { status: 'confirmed',         label: 'Confirm Order' },
+  confirmed:          { status: 'pickup_assigned',   label: 'Assign Pickup' },
+  pickup_assigned:    { status: 'picked_up',         label: 'Mark Picked Up' },
+  picked_up:          { status: 'cleaning',          label: 'Start Cleaning' },
+  cleaning:           { status: 'ready_for_delivery', label: 'Ready for Delivery' },
+  ready_for_delivery: { status: 'out_for_delivery',  label: 'Out for Delivery' },
+  out_for_delivery:   { status: 'delivered',         label: 'Mark Delivered' },
 };
 
 export default function AdminOrderDetail() {
@@ -181,14 +190,18 @@ export default function AdminOrderDetail() {
           className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">
           <Edit size={15} /> Update Status
         </button>
-        <button onClick={() => { updateOrderStatus(order.id, 'delivered'); showToast('Order marked as delivered'); }}
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors">
-          <CheckCircle size={15} /> Mark Delivered
-        </button>
-        <button onClick={() => { updateOrderStatus(order.id, 'escalated'); showToast('Order escalated'); }}
-          className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition-colors">
-          <AlertTriangle size={15} /> Escalate
-        </button>
+        {NEXT_STATUS[order.status] && (
+          <button onClick={() => { updateOrderStatus(order.id, NEXT_STATUS[order.status]!.status); showToast('Status updated'); }}
+            className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors">
+            <CheckCircle size={15} /> {NEXT_STATUS[order.status]!.label}
+          </button>
+        )}
+        {order.status !== 'delivered' && order.status !== 'cancelled' && (
+          <button onClick={() => { updateOrderStatus(order.id, 'cancelled'); showToast('Order cancelled'); }}
+            className="flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 transition-colors">
+            <AlertTriangle size={15} /> Cancel Order
+          </button>
+        )}
       </div>
 
       {/* Driver modal */}

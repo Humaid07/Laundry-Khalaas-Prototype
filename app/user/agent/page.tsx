@@ -145,7 +145,7 @@ export default function AgentPage() {
                 deliveryEta: 'Tomorrow by 6 PM',
                 paymentMethod: 'Pay on Delivery',
                 amount: 45,
-                status: 'pending',
+                status: 'created',
               },
             }),
             agent("Ready to confirm?", 'options', ['✅ Book It!', '✏️ Change Something']),

@@ -95,15 +95,15 @@ export function buildOrderConfirmation(draft: OrderDraft, orderId: string): stri
 
 export function buildStatusResponse(order: Order): string {
   const statusMessages: Record<OrderStatus, string> = {
-    pending: 'Your order is pending driver assignment.',
-    driver_assigned: `Driver *${order.driverName ?? 'assigned'}* will pick up your order at ${order.pickupSlot}.`,
-    pickup_in_progress: `*${order.driverName ?? 'Your driver'}* is on the way to collect your order.`,
-    collected: 'Your laundry has been collected and is on its way to our facility.',
+    created: 'Your order has been received and is awaiting confirmation.',
+    confirmed: 'Your order is confirmed — a driver will be assigned shortly.',
+    pickup_assigned: `Driver *${order.driverName ?? 'assigned'}* will pick up your order at ${order.pickupSlot}.`,
+    picked_up: 'Your laundry has been collected and is on its way to our facility.',
     cleaning: 'Your items are currently being cleaned at our facility.',
-    quality_check: 'Quality inspection in progress — almost ready.',
+    ready_for_delivery: 'Cleaning complete — your order is packed and ready for delivery.',
     out_for_delivery: `*${order.driverName ?? 'Your driver'}* is delivering your order now. Estimated arrival: ${order.deliveryEta}.`,
-    delivered: 'Your order has been delivered. Thank you for choosing LaundryKhalas! 🌟',
-    escalated: 'Your order has been flagged and a team member will contact you shortly.',
+    delivered: 'Your order has been delivered. Thank you for choosing LaundryKhalas!',
+    cancelled: 'Your order has been cancelled. Contact support if you need assistance.',
   };
   return (
     `📦 *Order ${order.id}*\n\n` +

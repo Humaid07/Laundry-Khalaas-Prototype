@@ -9,11 +9,11 @@ import { OrderStatus } from '@/lib/mock-data';
 
 const STATUS_FILTERS: { label: string; value: OrderStatus | 'all' }[] = [
   { label: 'All', value: 'all' },
-  { label: 'Pending', value: 'pending' },
-  { label: 'Driver Assigned', value: 'driver_assigned' },
-  { label: 'Collected', value: 'collected' },
+  { label: 'Created', value: 'created' },
+  { label: 'Pickup Assigned', value: 'pickup_assigned' },
   { label: 'Cleaning', value: 'cleaning' },
-  { label: 'Delivery', value: 'out_for_delivery' },
+  { label: 'Ready', value: 'ready_for_delivery' },
+  { label: 'Out for Delivery', value: 'out_for_delivery' },
   { label: 'Delivered', value: 'delivered' },
 ];
 

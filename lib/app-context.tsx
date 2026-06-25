@@ -67,7 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOrders(prev =>
       prev.map(o =>
         o.id === orderId
-          ? { ...o, driverId, driverName: driver.name, status: 'driver_assigned', updatedAt: new Date().toISOString() }
+          ? { ...o, driverId, driverName: driver.name, status: 'pickup_assigned', updatedAt: new Date().toISOString() }
           : o
       )
     );

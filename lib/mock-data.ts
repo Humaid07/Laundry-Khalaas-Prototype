@@ -1,15 +1,15 @@
 // Mock data for LaundryKhalas demo app
 
 export type OrderStatus =
-  | 'pending'
-  | 'driver_assigned'
-  | 'pickup_in_progress'
-  | 'collected'
+  | 'created'
+  | 'confirmed'
+  | 'pickup_assigned'
+  | 'picked_up'
   | 'cleaning'
-  | 'quality_check'
+  | 'ready_for_delivery'
   | 'out_for_delivery'
   | 'delivered'
-  | 'escalated';
+  | 'cancelled';
 
 export type ServiceType =
   | 'wash_fold'
@@ -214,7 +214,7 @@ export const ORDERS: Order[] = [
     emirate: 'Dubai',
     pickupSlot: 'Today, 6:00 PM – 8:00 PM',
     deliveryEta: 'Tomorrow by 8:00 PM',
-    status: 'driver_assigned',
+    status: 'pickup_assigned',
     driverId: 'd1',
     driverName: 'Ahmed Khan',
     amount: 145,
@@ -269,7 +269,7 @@ export const ORDERS: Order[] = [
     emirate: 'Dubai',
     pickupSlot: 'Today, 7:00 AM – 9:00 AM',
     deliveryEta: 'Tomorrow by 6:00 AM',
-    status: 'collected',
+    status: 'picked_up',
     driverId: 'd3',
     driverName: 'Team Driver 03',
     amount: 2800,
@@ -686,7 +686,7 @@ export const AGENT_CONVERSATION: AgentMessage[] = [
       pickupSlot: 'Today, 6:00 PM – 8:00 PM',
       deliveryEta: 'Tomorrow by 8:00 PM',
       paymentMethod: 'Pay on Delivery',
-      status: 'pending',
+      status: 'created',
       amount: 145,
     },
   },
@@ -708,27 +708,27 @@ export const AGENT_CONVERSATION: AgentMessage[] = [
 ];
 
 export const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: 'Pending',
-  driver_assigned: 'Driver Assigned',
-  pickup_in_progress: 'Pickup In Progress',
-  collected: 'Collected',
+  created: 'Order Created',
+  confirmed: 'Confirmed',
+  pickup_assigned: 'Pickup Assigned',
+  picked_up: 'Picked Up',
   cleaning: 'Cleaning in Progress',
-  quality_check: 'Quality Check',
+  ready_for_delivery: 'Ready for Delivery',
   out_for_delivery: 'Out for Delivery',
   delivered: 'Delivered',
-  escalated: 'Escalated',
+  cancelled: 'Cancelled',
 };
 
 export const STATUS_CLASSES: Record<OrderStatus, string> = {
-  pending: 'status-pending',
-  driver_assigned: 'status-assigned',
-  pickup_in_progress: 'status-assigned',
-  collected: 'status-cleaning',
+  created: 'status-pending',
+  confirmed: 'status-assigned',
+  pickup_assigned: 'status-assigned',
+  picked_up: 'status-cleaning',
   cleaning: 'status-cleaning',
-  quality_check: 'status-cleaning',
+  ready_for_delivery: 'status-cleaning',
   out_for_delivery: 'status-delivery',
   delivered: 'status-delivered',
-  escalated: 'status-escalated',
+  cancelled: 'status-escalated',
 };
 
 export const UAE_EMIRATES = [

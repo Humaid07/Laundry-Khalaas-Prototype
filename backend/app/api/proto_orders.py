@@ -15,15 +15,15 @@ from app.db.session import get_db
 # Valid status transitions for prototype frontend statuses.
 # Mirrors the DB trigger on the real `orders` table (adapted to frontend taxonomy).
 VALID_TRANSITIONS: dict[str, set[str]] = {
-    "pending":           {"driver_assigned", "escalated"},
-    "driver_assigned":   {"pickup_in_progress", "escalated"},
-    "pickup_in_progress": {"collected", "escalated"},
-    "collected":         {"cleaning", "escalated"},
-    "cleaning":          {"quality_check", "escalated"},
-    "quality_check":     {"out_for_delivery", "escalated"},
-    "out_for_delivery":  {"delivered", "escalated"},
-    "delivered":         set(),
-    "escalated":         set(),
+    "created":            {"confirmed", "cancelled"},
+    "confirmed":          {"pickup_assigned", "cancelled"},
+    "pickup_assigned":    {"picked_up", "cancelled"},
+    "picked_up":          {"cleaning"},
+    "cleaning":           {"ready_for_delivery"},
+    "ready_for_delivery": {"out_for_delivery"},
+    "out_for_delivery":   {"delivered"},
+    "delivered":          set(),
+    "cancelled":          set(),
 }
 
 router = APIRouter(prefix="/api", tags=["orders"])
@@ -43,7 +43,7 @@ SEED_ORDERS = [
         "emirate": "Dubai",
         "pickupSlot": "Today, 6:00 PM – 8:00 PM",
         "deliveryEta": "Tomorrow by 8:00 PM",
-        "status": "driver_assigned",
+        "status": "pickup_assigned",
         "driverId": "d1",
         "driverName": "Ahmed Khan",
         "amount": 145,
@@ -91,7 +91,7 @@ SEED_ORDERS = [
         "emirate": "Dubai",
         "pickupSlot": "Today, 7:00 AM – 9:00 AM",
         "deliveryEta": "Tomorrow by 6:00 AM",
-        "status": "collected",
+        "status": "picked_up",
         "driverId": "d3",
         "driverName": "Team Driver 03",
         "amount": 2800,

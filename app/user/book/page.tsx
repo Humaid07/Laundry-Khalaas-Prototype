@@ -72,7 +72,7 @@ export default function BookPage() {
       emirate: 'Dubai',
       pickupSlot: `${TIME_SLOTS[selectedDay].label}, ${selectedSlot}`,
       deliveryEta: 'Tomorrow by 8:00 PM',
-      status: 'pending',
+      status: 'created',
       driverId: null,
       driverName: null,
       amount: 145,
