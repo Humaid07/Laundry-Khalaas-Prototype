@@ -8,6 +8,7 @@ Enforces:
 Writes every call to AIActionLog and updates CostTracking.
 """
 import uuid
+from decimal import Decimal
 from typing import Optional
 
 import redis.asyncio as aioredis
@@ -101,7 +102,7 @@ class LLMService:
                     tracking.total_prompt_tokens += response.prompt_tokens
                     tracking.total_completion_tokens += response.completion_tokens
                     tracking.total_tokens += response.total_tokens
-                    tracking.total_estimated_cost += response.estimated_cost
+                    tracking.total_estimated_cost += Decimal(str(response.estimated_cost))
                 else:
                     tracking = CostTracking(
                         id=uuid.uuid4(),
