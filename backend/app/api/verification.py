@@ -9,7 +9,8 @@ import uuid
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 from app.db.session import get_db, AsyncSessionLocal
@@ -221,3 +222,87 @@ async def run_classifier_demo(db: AsyncSession = Depends(get_db)):
         ai_action_logged=True,
         llm_mode="offline_verification" if settings.MOCK_LLM else "live",
     )
+
+
+@router.post("/invalid-transition-demo")
+async def invalid_transition_demo():
+    """
+    Proves the PostgreSQL DB trigger catches invalid status transitions.
+    Creates a real order (status=created) in the real `orders` table,
+    attempts UPDATE to status=delivered (skipping all intermediate states),
+    catches the trigger exception, cleans up, and returns proof.
+    """
+    engine = create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    market_id = uuid.uuid4()
+    customer_id = uuid.uuid4()
+    address_id = uuid.uuid4()
+    order_id = uuid.uuid4()
+    trigger_fired = False
+    error_detail = ""
+
+    try:
+        # Phase 1: Insert real records into the proper schema tables
+        async with factory() as s:
+            await s.execute(text(
+                "INSERT INTO markets (id, name, country_code, currency, timezone) "
+                "VALUES (:id, :name, :cc, :cur, :tz)"
+            ), {"id": str(market_id), "name": "TriggerTest", "cc": "AE", "cur": "AED", "tz": "Asia/Dubai"})
+            await s.execute(text(
+                "INSERT INTO customers (id, market_id, full_name, phone) VALUES (:id, :mid, :fn, :ph)"
+            ), {"id": str(customer_id), "mid": str(market_id), "fn": "Test", "ph": "+971000000000"})
+            await s.execute(text(
+                "INSERT INTO customer_addresses (id, customer_id, market_id, address_line_1, city, emirate, country_code) "
+                "VALUES (:id, :cid, :mid, :a1, :city, :em, :cc)"
+            ), {"id": str(address_id), "cid": str(customer_id), "mid": str(market_id),
+                "a1": "Test St", "city": "Dubai", "em": "Dubai", "cc": "AE"})
+            await s.execute(text(
+                "INSERT INTO orders (id, market_id, customer_id, customer_address_id, status, service_type, currency) "
+                "VALUES (:id, :mid, :cid, :aid, 'created', 'wash_and_fold', 'AED')"
+            ), {"id": str(order_id), "mid": str(market_id), "cid": str(customer_id), "aid": str(address_id)})
+            await s.commit()
+
+        # Phase 2: Attempt the invalid transition — created → delivered
+        # The DB trigger `order_status_transition_check` must reject this.
+        async with factory() as s:
+            try:
+                await s.execute(
+                    text("UPDATE orders SET status = 'delivered' WHERE id = :id"),
+                    {"id": str(order_id)},
+                )
+                await s.commit()
+                trigger_fired = False
+            except Exception as e:
+                await s.rollback()
+                trigger_fired = True
+                error_detail = str(e)
+
+        # Phase 3: Clean up test records (FK order: orders → customer_addresses → customers → markets)
+        async with factory() as s:
+            await s.execute(text("DELETE FROM orders WHERE id = :id"), {"id": str(order_id)})
+            await s.execute(text("DELETE FROM customer_addresses WHERE id = :id"), {"id": str(address_id)})
+            await s.execute(text("DELETE FROM customers WHERE id = :id"), {"id": str(customer_id)})
+            await s.execute(text("DELETE FROM markets WHERE id = :id"), {"id": str(market_id)})
+            await s.commit()
+
+    finally:
+        await engine.dispose()
+
+    return {
+        "invalid_transition_rejected": trigger_fired,
+        "rejected_by": "postgres_trigger" if trigger_fired else "not_rejected",
+        "from_status": "created",
+        "to_status": "delivered",
+        "trigger_error": error_detail,
+    }
+
+
+@router.post("/reset-seed")
+async def reset_seed(db: AsyncSession = Depends(get_db)):
+    """Reset prototype_orders to the canonical seed state (clears QA test data)."""
+    from app.api.proto_orders import SEED_ORDERS, _seed
+    await db.execute(text("DELETE FROM prototype_orders"))
+    await db.commit()
+    await _seed(db)
+    return {"ok": True, "seeded": len(SEED_ORDERS)}

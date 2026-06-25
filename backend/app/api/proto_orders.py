@@ -5,12 +5,26 @@ Uses a JSONB store so the frontend's data shape is preserved exactly.
 import json
 from typing import Any, Dict
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
+
+# Valid status transitions for prototype frontend statuses.
+# Mirrors the DB trigger on the real `orders` table (adapted to frontend taxonomy).
+VALID_TRANSITIONS: dict[str, set[str]] = {
+    "pending":           {"driver_assigned", "escalated"},
+    "driver_assigned":   {"pickup_in_progress", "escalated"},
+    "pickup_in_progress": {"collected", "escalated"},
+    "collected":         {"cleaning", "escalated"},
+    "cleaning":          {"quality_check", "escalated"},
+    "quality_check":     {"out_for_delivery", "escalated"},
+    "out_for_delivery":  {"delivered", "escalated"},
+    "delivered":         set(),
+    "escalated":         set(),
+}
 
 router = APIRouter(prefix="/api", tags=["orders"])
 
@@ -227,9 +241,25 @@ class StatusUpdate(BaseModel):
 
 @router.patch("/orders/{order_id}/status")
 async def update_status(order_id: str, body: StatusUpdate, db: AsyncSession = Depends(get_db)):
+    row = (await db.execute(
+        text("SELECT data->>'status' FROM prototype_orders WHERE id = :id"),
+        {"id": order_id},
+    )).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    current = row[0]
+    new = body.status
+    allowed = VALID_TRANSITIONS.get(current, set())
+    if new not in allowed:
+        raise HTTPException(
+            status_code=422,
+            detail=f"invalid_order_status_transition: {current} → {new}",
+        )
+
     await db.execute(
         text("UPDATE prototype_orders SET data = data || CAST(:patch AS jsonb), updated_at = NOW() WHERE id = :id"),
-        {"id": order_id, "patch": json.dumps({"status": body.status})},
+        {"id": order_id, "patch": json.dumps({"status": new})},
     )
     await db.commit()
     return {"ok": True}

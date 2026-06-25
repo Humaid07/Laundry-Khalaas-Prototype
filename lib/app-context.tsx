@@ -30,10 +30,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetch(`${API}/api/orders`)
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setOrders(data); })
-      .catch(() => {});
+      .catch(e => console.error('[LaundryKhalaas] Failed to load orders:', e));
   }, []);
 
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
+    const snapshot = orders;
     setOrders(prev =>
       prev.map(o => o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o)
     );
@@ -42,7 +43,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
-      }).catch(() => {});
+      })
+        .then(r => {
+          if (!r.ok) {
+            r.json().then(err => console.error(`[LaundryKhalaas] Status update rejected (${r.status}):`, err)).catch(() => {});
+            setOrders(snapshot);
+          }
+        })
+        .catch(e => { console.error('[LaundryKhalaas] Status update failed:', e); setOrders(snapshot); });
     }
   };
 
@@ -61,7 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ driverId, driverName: driver.name }),
-      }).catch(() => {});
+      }).catch(e => console.error('[LaundryKhalaas] Driver assign failed:', e));
     }
   };
 
@@ -74,7 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(order),
-      }).catch(() => {});
+      }).catch(e => console.error('[LaundryKhalaas] Create order failed:', e));
     }
   };
 
