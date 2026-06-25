@@ -6,6 +6,8 @@ The rejection must come from the database trigger, not Python-level validation.
 import pytest
 from sqlalchemy import text
 
+RAW_SQL_MARKERS = ("UPDATE orders", "sqlalchemy", "asyncpg", "parameters", "https://sqlalche.me")
+
 
 @pytest.mark.asyncio
 async def test_invalid_transition_rejected_by_db(db_session, sample_order):
@@ -30,6 +32,20 @@ async def test_invalid_transition_rejected_by_db(db_session, sample_order):
         ), f"Expected trigger error message, got: {err_str}"
 
     assert raised, "Expected PostgreSQL trigger to raise an exception for created → delivered"
+
+
+@pytest.mark.asyncio
+async def test_invalid_transition_demo_endpoint_clean_response(http_client):
+    response = await http_client.post("/verification/invalid-transition-demo")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["invalid_transition_rejected"] is True
+    assert body["rejected_by"] == "postgres_trigger"
+    assert body["from_status"] == "created"
+    assert body["to_status"] == "delivered"
+    response_text = response.text.lower()
+    for marker in RAW_SQL_MARKERS:
+        assert marker.lower() not in response_text, f"Raw internals leaked in response: {marker!r}"
 
 
 @pytest.mark.asyncio

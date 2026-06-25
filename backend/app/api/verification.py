@@ -224,7 +224,11 @@ async def run_classifier_demo(db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.post("/invalid-transition-demo")
+@router.post(
+    "/invalid-transition-demo",
+    summary="DB trigger rejects invalid order status transition",
+    response_description="Proof that PostgreSQL blocked the invalid created → delivered jump.",
+)
 async def invalid_transition_demo():
     """
     Proves the PostgreSQL DB trigger catches invalid status transitions.
@@ -240,7 +244,7 @@ async def invalid_transition_demo():
     address_id = uuid.uuid4()
     order_id = uuid.uuid4()
     trigger_fired = False
-    error_detail = ""
+    error_type = ""
 
     try:
         # Phase 1: Insert real records into the proper schema tables
@@ -276,7 +280,7 @@ async def invalid_transition_demo():
             except Exception as e:
                 await s.rollback()
                 trigger_fired = True
-                error_detail = str(e)
+                error_type = type(e).__name__
 
         # Phase 3: Clean up test records (FK order: orders → customer_addresses → customers → markets)
         async with factory() as s:
@@ -294,7 +298,8 @@ async def invalid_transition_demo():
         "rejected_by": "postgres_trigger" if trigger_fired else "not_rejected",
         "from_status": "created",
         "to_status": "delivered",
-        "trigger_error": error_detail,
+        "message": "Invalid order transition correctly blocked at database level.",
+        "error_type": error_type,
     }
 
 

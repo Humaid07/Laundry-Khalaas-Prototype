@@ -3,7 +3,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Order, ORDERS, DRIVERS, Driver } from './mock-data';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'https://laundrykhalaas-api-production.up.railway.app';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'https://laundrykhalaas-api-production.up.railway.app')
+  .replace(/^﻿/, '')
+  .trim()
+  .replace(/\/$/, '');
+
+function apiUrl(path: string): string {
+  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+}
 
 interface AppState {
   orders: Order[];
@@ -26,8 +33,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [newOrderCreated, setNewOrderCreated] = useState(false);
 
   useEffect(() => {
-    if (!API) return;
-    fetch(`${API}/api/orders`)
+    if (!API_BASE) return;
+    fetch(apiUrl('/api/orders'))
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setOrders(data); })
       .catch(e => console.error('[LaundryKhalaas] Failed to load orders:', e));
@@ -38,8 +45,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOrders(prev =>
       prev.map(o => o.id === orderId ? { ...o, status, updatedAt: new Date().toISOString() } : o)
     );
-    if (API) {
-      fetch(`${API}/api/orders/${orderId}/status`, {
+    if (API_BASE) {
+      fetch(apiUrl(`/api/orders/${orderId}/status`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -64,8 +71,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : o
       )
     );
-    if (API) {
-      fetch(`${API}/api/orders/${orderId}/driver`, {
+    if (API_BASE) {
+      fetch(apiUrl(`/api/orders/${orderId}/driver`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ driverId, driverName: driver.name }),
@@ -77,8 +84,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOrders(prev => [order, ...prev]);
     setActiveOrderId(order.id);
     setNewOrderCreated(true);
-    if (API) {
-      fetch(`${API}/api/orders`, {
+    if (API_BASE) {
+      fetch(apiUrl('/api/orders'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(order),
