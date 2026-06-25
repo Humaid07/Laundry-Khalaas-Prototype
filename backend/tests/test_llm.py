@@ -51,13 +51,13 @@ async def test_mock_provider_classifier_output_is_valid_json(redis_client):
 
 
 @pytest.mark.asyncio
-async def test_llm_service_writes_ai_action_log(redis_client, sample_conversation):
+async def test_llm_service_writes_ai_action_log(redis_client, sample_conversation, null_session_factory):
     conv_id = sample_conversation.id
     provider = MockProvider()
     service = LLMService(
         provider=provider,
         redis_client=redis_client,
-        session_factory=AsyncSessionLocal,
+        session_factory=null_session_factory,
     )
     request = LLMRequest(
         action_type="test_action",
@@ -66,7 +66,7 @@ async def test_llm_service_writes_ai_action_log(redis_client, sample_conversatio
     )
     await service.complete(request)
 
-    async with AsyncSessionLocal() as session:
+    async with null_session_factory() as session:
         result = await session.execute(
             select(AIActionLog).where(
                 AIActionLog.conversation_id == conv_id,

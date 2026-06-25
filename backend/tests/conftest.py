@@ -36,6 +36,15 @@ async def db_session() -> AsyncSession:
 
 
 @pytest_asyncio.fixture
+async def null_session_factory():
+    """NullPool-based session factory for tests that pass session_factory to LLMService."""
+    engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    yield factory
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
 async def redis_client() -> aioredis.Redis:
     client = aioredis.from_url(REDIS_URL, decode_responses=True)
     yield client

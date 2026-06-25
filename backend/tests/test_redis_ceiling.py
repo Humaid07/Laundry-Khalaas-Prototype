@@ -46,7 +46,7 @@ async def test_redis_ceiling_blocks_when_exceeded(redis_client):
 
 
 @pytest.mark.asyncio
-async def test_redis_counter_increments_per_call(redis_client, sample_conversation):
+async def test_redis_counter_increments_per_call(redis_client, sample_conversation, null_session_factory):
     conv_id = sample_conversation.id
     key = f"conversation:{conv_id}:tokens"
     await redis_client.delete(key)
@@ -55,7 +55,7 @@ async def test_redis_counter_increments_per_call(redis_client, sample_conversati
     service = LLMService(
         provider=provider,
         redis_client=redis_client,
-        session_factory=AsyncSessionLocal,
+        session_factory=null_session_factory,
     )
 
     request = LLMRequest(
