@@ -46,8 +46,8 @@ async def test_redis_ceiling_blocks_when_exceeded(redis_client):
 
 
 @pytest.mark.asyncio
-async def test_redis_counter_increments_per_call(redis_client):
-    conv_id = uuid.uuid4()
+async def test_redis_counter_increments_per_call(redis_client, sample_conversation):
+    conv_id = sample_conversation.id
     key = f"conversation:{conv_id}:tokens"
     await redis_client.delete(key)
 

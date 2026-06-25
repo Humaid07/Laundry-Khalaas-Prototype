@@ -7,6 +7,7 @@ import pytest_asyncio
 import redis.asyncio as aioredis
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.pool import NullPool
 
 os.environ.setdefault("MOCK_LLM", "true")
 os.environ.setdefault("APP_ENV", "test")
@@ -26,8 +27,12 @@ def event_loop_policy():
 
 @pytest_asyncio.fixture
 async def db_session() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
+    # NullPool prevents connections being reused across event loops between tests.
+    engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with factory() as session:
         yield session
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture
