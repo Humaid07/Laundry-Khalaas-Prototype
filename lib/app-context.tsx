@@ -76,16 +76,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const r = await fetch(apiUrl(`/api/orders/${orderId}/driver`), {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ driverId, driverName: driver.name }),
       });
       if (!r.ok) {
         const err = await r.json().catch(() => ({}));
         throw new Error(err.detail || `HTTP ${r.status}`);
       }
-      const updated = await r.json();
-      // Reconcile state with backend-confirmed order (includes correct status + driver fields)
-      setOrders(prev => prev.map(o => o.id === orderId ? updated : o));
+      // Safe parse: if body is empty or non-JSON, keep the optimistic state rather than crashing.
+      const updated: Order | null = await r.json().catch(() => null);
+      if (updated && updated.id) {
+        setOrders(prev => prev.map(o => o.id === orderId ? updated : o));
+      }
     } catch (e) {
       console.error('[LaundryKhalaas] Driver assign failed:', e);
       setOrders(snapshot);

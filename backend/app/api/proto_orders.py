@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -346,7 +347,17 @@ async def assign_driver(order_id: str, body: DriverUpdate, db: AsyncSession = De
         text("SELECT CAST(data AS text) FROM prototype_orders WHERE id = :id"),
         {"id": order_id},
     )).fetchone()
-    return json.loads(row[0])
+    order_data = json.loads(row[0])
+
+    # Build explicit response body — full order fields plus the required summary fields.
+    # Using JSONResponse (not FastAPI's implicit serializer) guarantees Content-Type: application/json
+    # is present even when upstream proxies strip or rewrite response metadata.
+    response_body = {
+        **order_data,
+        "assigned_driver": body.driverName,
+        "message": "Driver assignment updated successfully.",
+    }
+    return JSONResponse(content=response_body, status_code=200, media_type="application/json")
 
 
 @router.get("/drivers")

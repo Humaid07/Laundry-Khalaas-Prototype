@@ -18,9 +18,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,   # must be False when allow_origins=["*"]; we use no cookies/auth
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", "Authorization"],
+    expose_headers=["Content-Type"],
 )
 
 app.include_router(health_router)
