@@ -18,7 +18,7 @@ interface AppState {
   activeOrderId: string | null;
   setActiveOrderId: (id: string | null) => void;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
-  assignDriver: (orderId: string, driverId: string) => void;
+  assignDriver: (orderId: string, driverId: string) => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
   newOrderCreated: boolean;
   setNewOrderCreated: (v: boolean) => void;
@@ -61,9 +61,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const assignDriver = (orderId: string, driverId: string) => {
+  const assignDriver = async (orderId: string, driverId: string): Promise<void> => {
     const driver = drivers.find(d => d.id === driverId);
     if (!driver) return;
+    const snapshot = orders;
     setOrders(prev =>
       prev.map(o =>
         o.id === orderId
@@ -71,12 +72,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : o
       )
     );
-    if (API_BASE) {
-      fetch(apiUrl(`/api/orders/${orderId}/driver`), {
+    if (!API_BASE) return;
+    try {
+      const r = await fetch(apiUrl(`/api/orders/${orderId}/driver`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ driverId, driverName: driver.name }),
-      }).catch(e => console.error('[LaundryKhalaas] Driver assign failed:', e));
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${r.status}`);
+      }
+      const updated = await r.json();
+      // Reconcile state with backend-confirmed order (includes correct status + driver fields)
+      setOrders(prev => prev.map(o => o.id === orderId ? updated : o));
+    } catch (e) {
+      console.error('[LaundryKhalaas] Driver assign failed:', e);
+      setOrders(snapshot);
+      throw e;
     }
   };
 

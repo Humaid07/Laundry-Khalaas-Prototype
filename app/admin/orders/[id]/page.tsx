@@ -50,10 +50,14 @@ export default function AdminOrderDetail() {
     setTimeout(() => setToast(''), 2500);
   };
 
-  const handleAssignDriver = (driverId: string) => {
-    assignDriver(order.id, driverId);
+  const handleAssignDriver = async (driverId: string) => {
     setShowDriverModal(false);
-    showToast('Driver assigned successfully');
+    try {
+      await assignDriver(order.id, driverId);
+      showToast('Driver assigned successfully');
+    } catch {
+      showToast('Failed to assign driver — please try again');
+    }
   };
 
   const handleStatusChange = (status: OrderStatus) => {

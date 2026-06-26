@@ -328,12 +328,25 @@ class DriverUpdate(BaseModel):
 
 @router.patch("/orders/{order_id}/driver")
 async def assign_driver(order_id: str, body: DriverUpdate, db: AsyncSession = Depends(get_db)):
+    check = (await db.execute(
+        text("SELECT id FROM prototype_orders WHERE id = :id"),
+        {"id": order_id},
+    )).fetchone()
+    if not check:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    patch = {"driverId": body.driverId, "driverName": body.driverName, "status": "pickup_assigned"}
     await db.execute(
         text("UPDATE prototype_orders SET data = data || CAST(:patch AS jsonb), updated_at = NOW() WHERE id = :id"),
-        {"id": order_id, "patch": json.dumps({"driverId": body.driverId, "driverName": body.driverName, "status": "driver_assigned"})},
+        {"id": order_id, "patch": json.dumps(patch)},
     )
     await db.commit()
-    return {"ok": True}
+
+    row = (await db.execute(
+        text("SELECT CAST(data AS text) FROM prototype_orders WHERE id = :id"),
+        {"id": order_id},
+    )).fetchone()
+    return json.loads(row[0])
 
 
 @router.get("/drivers")

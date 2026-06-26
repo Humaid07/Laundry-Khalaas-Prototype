@@ -36,6 +36,10 @@ async def test_invalid_transition_rejected_by_db(db_session, sample_order):
 
 @pytest.mark.asyncio
 async def test_cleaning_transitions(http_client):
+    # Reset seed data so LK-AE-1025 is guaranteed to be at cleaning status.
+    # This test mutates the order's status, so it must own its setup.
+    await http_client.post("/verification/reset-seed")
+
     # Seed order LK-AE-1025 starts at cleaning.
     # Invalid jump: cleaning -> delivered must return 422.
     r_invalid = await http_client.patch(
