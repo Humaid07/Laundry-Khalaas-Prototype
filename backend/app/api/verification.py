@@ -303,6 +303,57 @@ async def invalid_transition_demo():
     }
 
 
+@router.post(
+    "/run-whatsapp-agent-demo",
+    summary="End-to-end WhatsApp agent demo (offline verification mode)",
+    response_description="Full pipeline proof: message → privacy → classifier → price → order → reply",
+)
+async def run_whatsapp_agent_demo(db: AsyncSession = Depends(get_db)):
+    """
+    One-click founder verification of the complete WhatsApp agent pipeline.
+
+    Runs a sample customer conversation through every stage:
+    - Customer message stored in PostgreSQL
+    - Privacy filter redacts phone number before LLM prompt
+    - Classifier writes five structured fields (intent, sentiment, sentiment_score,
+      sales_stage_delta, topic) via LLMService
+    - Laundry items parsed from natural language (regex, no LLM required)
+    - Price calculated using sample pricing rules (shirt=10, trouser=12, duvet=75 AED)
+    - Order created in prototype_orders — visible in admin Orders panel immediately
+    - Agent reply generated and returned
+
+    No external API keys required. Operates in offline verification mode (MOCK_LLM=true).
+    To enable live Anthropic LLM calls: set MOCK_LLM=false and ANTHROPIC_API_KEY.
+    """
+    from app.api.whatsapp import SimulateMessageRequest, run_agent_flow
+
+    sample = SimulateMessageRequest(
+        customer_name="Demo Customer",
+        phone="+971 50 123 4567",
+        message="Hi, I need laundry pickup today. I have 3 shirts, 2 trousers and 1 duvet. My number is +971 50 123 4567.",
+        address="Dubai Marina",
+        emirate="Dubai",
+        pickup_window="Today, 6:00 PM – 8:00 PM",
+    )
+
+    result = await run_agent_flow(sample, db)
+
+    result["verification"] = {
+        "mode":                  "offline_verification",
+        "llm_provider":          "mock-deterministic-v1",
+        "external_api_required": False,
+        "pricing_rules": {
+            "shirt_aed":   10,
+            "trouser_aed": 12,
+            "duvet_aed":   75,
+            "note":        "Configurable sample rules for verification. Replace with live catalogue in production.",
+        },
+        "sample_message": sample.message,
+    }
+
+    return result
+
+
 @router.post("/reset-seed")
 async def reset_seed(db: AsyncSession = Depends(get_db)):
     """Reset prototype_orders to the canonical seed state (clears QA test data)."""
