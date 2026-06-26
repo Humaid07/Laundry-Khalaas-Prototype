@@ -3,10 +3,11 @@ Orders and drivers API — bridges the Next.js frontend to PostgreSQL.
 Uses a JSONB store so the frontend's data shape is preserved exactly.
 """
 import json
-from typing import Any, Dict
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,6 +28,37 @@ VALID_TRANSITIONS: dict[str, set[str]] = {
 }
 
 router = APIRouter(prefix="/api", tags=["orders"])
+
+
+class CreateOrderRequest(BaseModel):
+    """Pydantic schema for order creation. Required fields are validated server-side.
+    extra='allow' so the user-booking flow can POST the full Order object without rejection."""
+    model_config = ConfigDict(extra="allow")
+
+    customerName: str
+    customerPhone: str
+    pickupAddress: str
+    emirate: str
+    amount: float
+    pickupSlot: str
+    paymentMethod: str
+    # Fields with defaults
+    id: Optional[str] = None
+    customerId: str = "admin"
+    services: List[str] = []
+    items: List[Any] = []
+    deliveryAddress: Optional[str] = None
+    deliveryEta: str = ""
+    status: str = "created"
+    driverId: Optional[str] = None
+    driverName: Optional[str] = None
+    currency: str = "AED"
+    paymentStatus: str = "pending"
+    notes: str = ""
+    facilityAssigned: str = ""
+    isB2B: bool = False
+    createdAt: Optional[str] = None
+    updatedAt: Optional[str] = None
 
 # ── Seed data (mirrors lib/mock-data.ts) ────────────────────────────────────
 
@@ -226,10 +258,34 @@ async def get_order(order_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/orders", status_code=201)
-async def create_order(order: Dict[str, Any], db: AsyncSession = Depends(get_db)):
+async def create_order(body: CreateOrderRequest, db: AsyncSession = Depends(get_db)):
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Generate ID if not provided: find max numeric suffix and increment.
+    order_id = body.id
+    if not order_id:
+        result = await db.execute(text("SELECT id FROM prototype_orders"))
+        rows = result.fetchall()
+        max_num = 1026
+        for row in rows:
+            try:
+                max_num = max(max_num, int(row[0].split("-")[-1]))
+            except (ValueError, IndexError):
+                pass
+        order_id = f"LK-AE-{max_num + 1}"
+
+    order = body.model_dump()
+    order["id"] = order_id
+    order.setdefault("createdAt", now)
+    order.setdefault("updatedAt", now)
+    if order.get("deliveryAddress") is None:
+        order["deliveryAddress"] = order["pickupAddress"]
+    if not order.get("services"):
+        order["services"] = [order.get("service", "")]
+
     await db.execute(
         text("INSERT INTO prototype_orders (id, data) VALUES (:id, CAST(:data AS jsonb)) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()"),
-        {"id": order["id"], "data": json.dumps(order)},
+        {"id": order_id, "data": json.dumps(order)},
     )
     await db.commit()
     return order

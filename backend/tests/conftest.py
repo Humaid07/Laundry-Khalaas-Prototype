@@ -53,8 +53,12 @@ async def redis_client() -> aioredis.Redis:
 
 @pytest_asyncio.fixture
 async def http_client():
+    from app.db.session import engine
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
+    # Dispose global engine pool after each HTTP test to prevent asyncpg connections
+    # from being reused across event loops in subsequent tests.
+    await engine.dispose()
 
 
 @pytest_asyncio.fixture

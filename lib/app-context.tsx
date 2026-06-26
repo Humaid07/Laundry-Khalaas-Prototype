@@ -19,7 +19,7 @@ interface AppState {
   setActiveOrderId: (id: string | null) => void;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
   assignDriver: (orderId: string, driverId: string) => void;
-  addOrder: (order: Order) => void;
+  addOrder: (order: Order) => Promise<void>;
   newOrderCreated: boolean;
   setNewOrderCreated: (v: boolean) => void;
 }
@@ -80,16 +80,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addOrder = (order: Order) => {
+  const addOrder = async (order: Order): Promise<void> => {
     setOrders(prev => [order, ...prev]);
     setActiveOrderId(order.id);
     setNewOrderCreated(true);
-    if (API_BASE) {
-      fetch(apiUrl('/api/orders'), {
+    if (!API_BASE) return;
+    try {
+      const r = await fetch(apiUrl('/api/orders'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(order),
-      }).catch(e => console.error('[LaundryKhalaas] Create order failed:', e));
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${r.status}`);
+      }
+      const created = await r.json();
+      // Reconcile: replace optimistic entry with backend-confirmed data (may have server-generated ID)
+      setOrders(prev => prev.map(o => o.id === order.id ? created : o));
+    } catch (e) {
+      console.error('[LaundryKhalaas] Create order failed:', e);
+      setOrders(prev => prev.filter(o => o.id !== order.id));
+      throw e;
     }
   };
 
